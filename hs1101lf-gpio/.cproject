@@ -18,7 +18,7 @@
 					<folderInfo id="org.buildroot.wks.buildroot-2016.11.output.exe.debug.2031166396." name="/" resourcePath="">
 						<toolChain id="org.buildroot.wks.buildroot-2016.11.output.exe.debug.1063258812" name="Buildroot ARM (/wks/buildroot-2016.11/output)" nonInternalBuilderId="org.buildroot.wks.buildroot-2016.11.output.builder" superClass="org.buildroot.wks.buildroot-2016.11.output.exe.debug">
 							<targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.GNU_ELF" id="org.buildroot.wks.buildroot-2016.11.output.platform.base.1429749621" isAbstract="false" name="Buildroot ARM Platform (/wks/buildroot-2016.11/output)" osList="linux" superClass="org.buildroot.wks.buildroot-2016.11.output.platform.base"/>
-							<builder id="org.buildroot.wks.buildroot-2016.11.output.builder.271052737" managedBuildOn="false" name="Buildroot ARM builder (/wks/buildroot-2016.11/output)" superClass="org.buildroot.wks.buildroot-2016.11.output.builder"/>
+							<builder id="org.buildroot.wks.buildroot-2016.11.output.builder.271052737" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="Buildroot ARM builder (/wks/buildroot-2016.11/output)" superClass="org.buildroot.wks.buildroot-2016.11.output.builder"/>
 							<tool id="org.buildroot.wks.buildroot-2016.11.output.assembler.1331860323" name="Buildroot ARM Assembler (/wks/buildroot-2016.11/output)" superClass="org.buildroot.wks.buildroot-2016.11.output.assembler">
 								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.1757061458" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 							</tool>
@@ -124,5 +124,24 @@
 			<resource resourceType="PROJECT" workspacePath="/hs1101lf-gpio"/>
 		</configuration>
 	</storageModule>
-	<storageModule moduleId="org.eclipse.cdt.make.core.buildtargets"/>
+	<storageModule moduleId="org.eclipse.cdt.make.core.buildtargets">
+		<buildTargets>
+			<target name="clean" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
+				<buildCommand>make</buildCommand>
+				<buildArguments/>
+				<buildTarget>clean</buildTarget>
+				<stopOnError>true</stopOnError>
+				<useDefaultCommand>false</useDefaultCommand>
+				<runAllBuilders>true</runAllBuilders>
+			</target>
+			<target name="all" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
+				<buildCommand>make</buildCommand>
+				<buildArguments/>
+				<buildTarget>all</buildTarget>
+				<stopOnError>true</stopOnError>
+				<useDefaultCommand>false</useDefaultCommand>
+				<runAllBuilders>true</runAllBuilders>
+			</target>
+		</buildTargets>
+	</storageModule>
 </cproject>

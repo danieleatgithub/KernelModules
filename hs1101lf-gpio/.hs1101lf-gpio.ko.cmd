@@ -1,1 +1,0 @@
-cmd_/wks/workspace/KernelModules/hs1101lf-gpio/hs1101lf-gpio.ko := arm-buildroot-linux-gnueabi-ld -EL -r  -T ./scripts/module-common.lds --build-id  -o /wks/workspace/KernelModules/hs1101lf-gpio/hs1101lf-gpio.ko /wks/workspace/KernelModules/hs1101lf-gpio/hs1101lf-gpio.o /wks/workspace/KernelModules/hs1101lf-gpio/hs1101lf-gpio.mod.o

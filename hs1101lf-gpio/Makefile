@@ -1,4 +1,4 @@
-MODULES := hs1101lf-gpio.o
+MODULES := hs1101lf.o
 
 ARCH := arm
 CROSS_COMPILE := arm-buildroot-linux-gnueabi-
