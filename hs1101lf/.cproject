@@ -52,6 +52,9 @@
 							<tool id="org.buildroot.wks.buildroot-2016.11.output.pkgconfig.956218053" name="Buildroot ARM Pkg config (/wks/buildroot-2016.11/output)" superClass="org.buildroot.wks.buildroot-2016.11.output.pkgconfig"/>
 						</toolChain>
 					</folderInfo>
+					<sourceEntries>
+						<entry excluding="include|kernel|inux-4.4.16" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+					</sourceEntries>
 				</configuration>
 			</storageModule>
 			<storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
@@ -138,6 +141,13 @@
 				<buildCommand>make</buildCommand>
 				<buildArguments/>
 				<buildTarget>all</buildTarget>
+				<stopOnError>true</stopOnError>
+				<useDefaultCommand>false</useDefaultCommand>
+				<runAllBuilders>true</runAllBuilders>
+			</target>
+			<target name="modules_install" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
+				<buildCommand>make</buildCommand>
+				<buildTarget>modules_install</buildTarget>
 				<stopOnError>true</stopOnError>
 				<useDefaultCommand>false</useDefaultCommand>
 				<runAllBuilders>true</runAllBuilders>
