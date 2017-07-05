@@ -1,0 +1,15 @@
+# 
+# at91-sama5d3_acquaa5.dts is an HARD LINK to kernel source
+# 
+
+#daniele@debian64-devel:/wks/workspace/Homer/root_overlay/linux$ ls -i
+#6176290 at91-sama5d3_acquaa5.dts
+#daniele@debian64-devel:/wks/workspace/Homer/root_overlay/linux$ find /wks/linux-4.4.16/ -inum 6176290
+#/wks/linux-4.4.16/arch/arm/boot/dts/at91-sama5d3_acquaa5.dts
+#daniele@debian64-devel:/wks/workspace/Homer/root_overlay/linux$
+
+ssh root@192.168.1.200 'md5sum /boot/at91-sama5d3_acqua.dtb && mv /boot/at91-sama5d3_acqua.dtb /boot/at91-sama5d3_acqua.dtb.old'
+/usr/bin/scp /wks/linux-4.4.16/arch/arm/boot/dts/at91-sama5d3_acquaa5.dtb root@192.168.1.200:/boot/at91-sama5d3_acqua.dtb
+ssh root@192.168.1.200 'md5sum /boot/at91-sama5d3_acqua.dtb'
+
+

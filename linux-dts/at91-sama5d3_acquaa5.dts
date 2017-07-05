@@ -134,6 +134,7 @@
 			
 			gpio_keys {
 					compatible = "gpio-keys";
+					debounce-interval = <5>; /* same as default */
 					#address-cells = <1>;
 					#size-cells = <0>;
 					#autorepeat;
@@ -164,14 +165,6 @@
 					};
 			};
 
-			/* humidity sensor */
-			hs1101lf0: hs1101lf@0 {
-				compatible = "hs1101lf";
-				gpios = <&pioA 9 GPIO_ACTIVE_LOW>;
-				pinctrl-names = "default";
-				pinctrl-0 = <&pinctrl_hs1101lf0_0>;
-				status = "okay";			
-			};
 			
 			/* Giga Ethernet */
 			macb0: ethernet@f0028000 {
@@ -268,9 +261,9 @@
 						/* pull up on */
 						atmel,pins = <AT91_PIOA 1 AT91_PERIPH_GPIO AT91_PINCTRL_PULL_UP>;
 					};
-					pinctrl_hs1101lf0_0: hs1101lf0_0-0 {
+					pinctrl_hs1101lf_0: hs1101lf_0-0 {
 							/* pull up on */
-						atmel,pins = <AT91_PIOA 9 AT91_PERIPH_GPIO AT91_PINCTRL_PULL_UP>;				
+						atmel,pins = <AT91_PIOA 10 AT91_PERIPH_GPIO AT91_PINCTRL_PULL_UP>;				
 					};
 				};
 			};
@@ -364,12 +357,21 @@
 		};
 
 	};
+	
 	w1@0 {
 		compatible = "w1-gpio";
 		gpios = <&pioA 1 GPIO_ACTIVE_LOW>;
 		pinctrl-names = "default";
 		pinctrl-0 = <&pinctrl_w1_0>;
 		status = "okay";
+	};
+	/* humidity sensor */
+	hs1101lf@0 {
+		compatible = "hs1101lf";
+		gpios = <&pioA 10 GPIO_ACTIVE_LOW>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_hs1101lf_0>;
+		status = "okay";			
 	};
 	sound {
 		status = "disabled";
