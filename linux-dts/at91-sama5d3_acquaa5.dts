@@ -166,7 +166,7 @@
 
 			/* humidity sensor */
 			hs1101lf0: hs1101lf@0 {
-				compatible = "hs1101lf-gpio";
+				compatible = "hs1101lf";
 				gpios = <&pioA 9 GPIO_ACTIVE_LOW>;
 				pinctrl-names = "default";
 				pinctrl-0 = <&pinctrl_hs1101lf0_0>;

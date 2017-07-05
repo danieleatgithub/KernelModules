@@ -1,14 +1,11 @@
 /*
- * hs1101lf-gpio.c
+ * hs1101lf.c
  *
  *  Created on: 23/giu/2017
  *      Author: daniele
  *
- *      From: https://gist.github.com/withattribution/ac2336a49fb48836b18e
- *        From: https://www.mail-archive.com/beagleboard@googlegroups.com/msg00436.html
- */
-/*
- *  hello-1.c - The simplest kernel module.
+ *  Skeleton from /drivers/iio/frequency/ad9523.c
+ *
  */
 #include <linux/module.h> /* Needed by all modules */
 #include <linux/kernel.h> /* Needed for KERN_INFO */
@@ -17,130 +14,139 @@
 #include <linux/of_gpio.h>
 #include <linux/err.h>
 #include <linux/of.h>
-#include "hs1101lf_gpio.h"
+#include <linux/iio/iio.h>
+#include <linux/iio/sysfs.h>
 
-#define HS1101LF_DESCRIPTION   "Frequency hygrometer based on HS1101LF sensor"
+#include "hs1101lf.h"
 
-#if defined(CONFIG_OF)
-static const struct of_device_id hs1101lf_gpio_dt_ids[] = {
-  { .compatible = "hs1101lf-gpio"},
+struct hs1101lf_state {
+
+  int gpio;
+  int irq;
+  int humidity;
+  unsigned long counter;
+
+};
+
+static ssize_t hs1101lf_counter_show(struct device *dev,
+                                     struct device_attribute *attr, char *buf) {
+//  struct iio_dev *indio_dev = dev_to_iio_dev(dev);
+//  struct iio_dev_attr *this_attr = to_iio_dev_attr(attr);
+  int ret;
+
+  ret = sprintf(buf, "%d\n", 10);
+  return ret;
+}
+static IIO_DEVICE_ATTR(counter, S_IRUGO,
+    hs1101lf_counter_show,
+    NULL,
+    0);
+
+static struct attribute *hs1101lf_attributes[] = { &iio_dev_attr_counter
+    .dev_attr.attr, NULL, };
+
+static const struct attribute_group hs1101lf_attribute_group = {
+  .attrs = hs1101lf_attributes,
+};
+static int hs1101lf_read_raw(struct iio_dev *indio_dev,
+                             struct iio_chan_spec const *chan, int *val,
+                             int *val2, long m) {
+  struct hs1101lf_state *hs1101lf_state = iio_priv(indio_dev);
+  int ret;
+
+  mutex_lock(&indio_dev->mlock);
+  hs1101lf_state->humidity = 1234;
+
+  ret = IIO_VAL_INT;
+  if (chan->type == IIO_HUMIDITYRELATIVE)
+    *val = hs1101lf_state->humidity;
+  else
+    ret = -EINVAL;
+
+  mutex_unlock(&indio_dev->mlock);
+  dev_info(&indio_dev->dev, "hs1101lf_read_raw ret=%d val=%d", ret, *val);
+  return ret;
+}
+static int hs1101lf_reg_access(struct iio_dev *indio_dev, unsigned int reg,
+                               unsigned int writeval, unsigned int *readval) {
+  mutex_lock(&indio_dev->mlock);
+  dev_info(&indio_dev->dev, "hs1101lf_reg_access reg=%d writeval=%d readval=%p",
+           reg, writeval, readval);
+  mutex_unlock(&indio_dev->mlock);
+
+  return 0;
+}
+static const struct iio_info hs1101lf_info = {
+  .read_raw = &hs1101lf_read_raw,
+  .debugfs_reg_access = &hs1101lf_reg_access,
+  .attrs = &hs1101lf_attribute_group,
+  .driver_module = THIS_MODULE,
+};
+static const struct iio_chan_spec hs1101lf_chan_spec[] = {
+  { .type = IIO_HUMIDITYRELATIVE,
+    .info_mask_separate = BIT(IIO_CHAN_INFO_PROCESSED),}
+};
+
+static int hs1101lf_probe(struct platform_device *pdev) {
+  struct device *dev = &pdev->dev;
+  struct device_node *node = dev->of_node;
+  struct iio_dev *indio_dev;
+  struct hs1101lf_state *hs1101lf_state;
+  int ret;
+
+  indio_dev = devm_iio_device_alloc(dev, sizeof(*hs1101lf_state));
+  if (indio_dev == NULL)
+    return -ENOMEM;
+
+  ret = of_get_gpio(node, 0);
+  if (ret < 0)
+    return ret;
+
+  hs1101lf_state = iio_priv(indio_dev);
+
+  hs1101lf_state->gpio = ret;
+
+  ret = devm_gpio_request_one(dev, hs1101lf_state->gpio, GPIOF_IN, pdev->name);
+  if (ret)
+    return ret;
+
+  hs1101lf_state = iio_priv(indio_dev);
+
+  platform_set_drvdata(pdev, indio_dev);
+
+  indio_dev->name = pdev->name;
+  indio_dev->dev.parent = &pdev->dev;
+  indio_dev->info = &hs1101lf_info;
+  indio_dev->modes = INDIO_DIRECT_MODE;
+  indio_dev->channels = hs1101lf_chan_spec;
+  indio_dev->num_channels = ARRAY_SIZE(hs1101lf_chan_spec);
+  dev_info(&pdev->dev, "HS1101LF PROBED: Pin=%d", hs1101lf_state->gpio);
+  return devm_iio_device_register(dev, indio_dev);
+
+}
+static int hs1101lf_remove(struct platform_device *pdev) {
+
+  dev_info(&pdev->dev, "hs1101lf_remove");
+  return 0;
+}
+static const struct of_device_id hs1101lf_dt_ids[] = {
+  { .compatible = "hs1101lf"},
   {}
 };
-MODULE_DEVICE_TABLE(of, hs1101lf_gpio_dt_ids);
-#endif
+MODULE_DEVICE_TABLE(of, hs1101lf_dt_ids);
 
-RIVEDERE CON IL DEVICE INA219 anche per uso attribute, group e mutex
-il mutex è da usare per la misura e la lettura
-
-static int hs1101lf_gpio_probe_dt(struct platform_device *pdev) {
-  struct hs1101lf_gpio_platform_data *pdata = dev_get_platdata(&pdev->dev);
-  struct device_node *np = pdev->dev.of_node;
-  int gpio;
-
-  /*
-   * Allocate memory for platform data
-   */
-  pdata = devm_kzalloc(&pdev->dev, sizeof(*pdata), GFP_KERNEL);
-  if (!pdata)
-  return -ENOMEM;
-
-  /*
-   * Getting data from device tree
-   */
-  if (of_get_property(np, "linux,open-drain", NULL))
-  pdata->is_open_drain = 1;
-
-  gpio = of_get_gpio(np, 0);
-  if (gpio < 0) {
-    if (gpio != -EPROBE_DEFER)
-    dev_err(&pdev->dev, "Failed to parse gpio property for data pin (%d)\n",
-        gpio);
-
-    return gpio;
-  }
-  pdata->pin = gpio;
-
-  gpio = of_get_gpio(np, 1);
-  if (gpio == -EPROBE_DEFER)
-  return gpio;
-
-  pdev->dev.platform_data = pdata;
-
-  dev_info(&pdev->dev, "HS1101LF PROBED: Pin=%d Drain=%d", pdata->pin,
-      pdata->is_open_drain);
-  return 0;
-}
-
-static int hs1101lf_gpio_probe(struct platform_device *pdev) {
-  struct hs1101lf_gpio_platform_data *pdata;
-  int err;
-
-  /*
-   * Device tree is ok probe
-   */
-  if (of_have_populated_dt()) {
-    err = hs1101lf_gpio_probe_dt(pdev);
-    if (err < 0)
-      return err;
-  }
-
-  pdata = dev_get_platdata(&pdev->dev);
-
-  if (!pdata) {
-    dev_err(&pdev->dev, "No configuration data\n");
-    return -ENXIO;
-  }
-
-  err = devm_gpio_request(&pdev->dev, pdata->pin, "hs1101lf");
-  if (err) {
-    dev_err(&pdev->dev, "gpio_request (pin) failed\n");
-    return err;
-  }
-
-  if (pdata->is_open_drain) {
-    gpio_direction_output(pdata->pin, 1);
-  } else {
-    gpio_direction_input(pdata->pin);
-  }
-
-  return 0;
-}
-
-static int hs1101lf_gpio_remove(struct platform_device *pdev) {
-
-  return 0;
-}
-
-/*
- * Power optimization
- */
-static int __maybe_unused hs1101lf_gpio_suspend(struct device *dev)
-{
-
-  return 0;
-}
-
-static int __maybe_unused hs1101lf_gpio_resume(struct device *dev)
-{
-
-  return 0;
-}
-
-static SIMPLE_DEV_PM_OPS(hs1101lf_gpio_pm_ops, hs1101lf_gpio_suspend, hs1101lf_gpio_resume);
-
-static struct platform_driver hs1101lf_gpio_driver = {
+static struct platform_driver hs1101lf_driver = {
   .driver = {
-    .name = "hs1101lf-gpio",
-    .pm = &hs1101lf_gpio_pm_ops,
-    .of_match_table = of_match_ptr(hs1101lf_gpio_dt_ids),
+    .name = "hs1101lf",
+    .of_match_table = of_match_ptr(hs1101lf_dt_ids),
   },
-  .probe = hs1101lf_gpio_probe,
-  .remove = hs1101lf_gpio_remove,
+  .probe = hs1101lf_probe,
+  .remove = hs1101lf_remove,
 };
 
-module_platform_driver (hs1101lf_gpio_driver);
+module_platform_driver (hs1101lf_driver);
 
-MODULE_LICENSE("GPL");
+MODULE_LICENSE("GPL v2");
 MODULE_AUTHOR("Daniele Colombo");
-MODULE_DESCRIPTION(HS1101LF_DESCRIPTION);
-MODULE_SUPPORTED_DEVICE("hs1101lf-gpio");
+MODULE_DESCRIPTION("Frequency hygrometer based on HS1101LF sensor");
+MODULE_SUPPORTED_DEVICE("hs1101lf");

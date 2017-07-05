@@ -1,1 +1,1 @@
-/usr/bin/scp /wks/workspace/KernelModules/hs1101lf/hs1101lf.ko root@192.168.1.200:/root/debug/.
+/usr/bin/scp /wks/workspace/KernelModules/hs1101lf/hs1101lf.ko root@192.168.1.200:/lib/modules/4.4.16/hs1101lf.ko

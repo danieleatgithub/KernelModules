@@ -18,4 +18,4 @@ struct hs1101lf_gpio_platform_data {
   unsigned int is_open_drain :1;
 };
 
-#endif /* HS1101LF_GPIO_H_ */
+#endif /* HS1101LF_H_ */
