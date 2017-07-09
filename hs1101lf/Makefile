@@ -7,16 +7,16 @@ KDIR = /wks/linux-4.4.16
 
 MAKEARCH := $(MAKE) ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE)
 
-all:
+hs1101lf:
 	$(MAKEARCH) -C $(KDIR) M=$(shell pwd) modules
 clean:
-	$(MAKEARCH) -C $(KDIR) M=$(shell pwd) clean
-modules_install:
+	$(MAKEARCH) -C $(KDIR) M=$(shell pwd) clean	
+all: hs1101lf
 	$(MAKEARCH) -C $(KDIR) INSTALL_MOD_PATH=$(KDIR)/modules M=$(shell pwd) modules_install
 	
-margie: 
+margie: hs1101lf
 	$(shell pwd)/CP margie
-homer: 
+homer: hs1101lf
 	$(shell pwd)/CP homer
 
     

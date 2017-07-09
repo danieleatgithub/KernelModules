@@ -132,7 +132,7 @@ static int hs1101lf_probe(struct platform_device *pdev)
 			&hs1101lf_state->gpio_data_flags);
 	if(!gpio_is_valid(hs1101lf_state->gpio_data))
 		HS1101LF_FATAL(err_free_device);
-	hs1101lf_state->gpio_power = of_get_named_gpio_flags(node, "power_save",
+	hs1101lf_state->gpio_power = of_get_named_gpio_flags(node, "power-save",
 			0, &hs1101lf_state->gpio_power_flags);
 
 	platform_set_drvdata(pdev, indio_dev);
