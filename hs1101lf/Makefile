@@ -11,12 +11,14 @@ hs1101lf:
 	$(MAKEARCH) -C $(KDIR) M=$(shell pwd) modules
 clean:
 	$(MAKEARCH) -C $(KDIR) M=$(shell pwd) clean	
+# TARGET_DIR from buildroot post-build.sh
+modules_install: hs1101lf
+	$(MAKEARCH) -C $(KDIR) INSTALL_MOD_PATH=$(TARGET_DIR) M=$(shell pwd) modules_install
 all: hs1101lf
-	$(MAKEARCH) -C $(KDIR) INSTALL_MOD_PATH=$(KDIR)/modules M=$(shell pwd) modules_install
 	
-margie: hs1101lf
+debug_margie: hs1101lf
 	$(shell pwd)/CP margie
-homer: hs1101lf
+debug_homer: hs1101lf
 	$(shell pwd)/CP homer
 
     

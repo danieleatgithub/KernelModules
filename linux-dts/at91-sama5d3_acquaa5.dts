@@ -373,7 +373,7 @@
 	hs1101lf@0 {
 		compatible = "hs1101lf";
 		data = <&pioA 10 GPIO_ACTIVE_LOW>;
-		power.save = <&pioA 11 GPIO_ACTIVE_LOW>; /* optional turn of device */
+		power-save = <&pioA 11 GPIO_ACTIVE_LOW>; /* optional turn of device */
 		pinctrl-names = "data","power";
 		pinctrl-0 = <&pinctrl_hs1101lf_0>;
 		pinctrl-1 = <&pinctrl_hs1101lf_1>;
