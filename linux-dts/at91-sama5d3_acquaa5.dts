@@ -265,6 +265,10 @@
 							/* pull up on */
 						atmel,pins = <AT91_PIOA 10 AT91_PERIPH_GPIO AT91_PINCTRL_PULL_UP>;				
 					};
+					pinctrl_hs1101lf_1: hs1101lf_1-0 {
+							/* pull up on */
+						atmel,pins = <AT91_PIOA 11 AT91_PERIPH_GPIO AT91_PINCTRL_PULL_UP>;				
+					};
 				};
 			};
 
@@ -368,9 +372,11 @@
 	/* humidity sensor */
 	hs1101lf@0 {
 		compatible = "hs1101lf";
-		gpios = <&pioA 10 GPIO_ACTIVE_LOW>;
-		pinctrl-names = "default";
+		data = <&pioA 10 GPIO_ACTIVE_LOW>;
+		power_save = <&pioA 11 GPIO_ACTIVE_LOW>; /* optional turn of device */
+		pinctrl-names = "data","power";
 		pinctrl-0 = <&pinctrl_hs1101lf_0>;
+		pinctrl-1 = <&pinctrl_hs1101lf_1>;
 		status = "okay";			
 	};
 	sound {

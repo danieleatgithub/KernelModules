@@ -1,26 +1,16 @@
 kernel module for hygrometer based on hs1101ls sensor (Frequency counter)
 
-[root@homer iio:device0]# pwd
-/sys/bus/iio/devices/iio:device0
 
-[32021.020000] hs1101lf ahb:apb:hs1101lf@0: HS1101LF PROBED: Pin=9
-[32054.740000] iio iio:device0: hs1101lf_read_raw ret=1 val=1234
-[root@homer iio:device0]# ls
+cd  /sys/bus/iio/devices/iio:device0
+cat /sys/bus/iio/devices/iio:device0/in_humidityrelative_input
+cat /sys/bus/iio/devices/iio:device0/counter
+
+ls  /sys/bus/iio/devices/iio:device0
 counter  dev  in_humidityrelative_input  name  of_node@  power/  subsystem@  uevent
-[root@homer iio:device0]# cat in_humidityrelative_input
-1234
-[root@homer iio:device0]# cat counter
-10
 
-
-[root@homer iio:device0]# ls power/
+ls /sys/bus/iio/devices/iio:device0/power/
 async                 control              runtime_active_time  runtime_status          runtime_usage
 autosuspend_delay_ms  runtime_active_kids  runtime_enabled      runtime_suspended_time
+
 [root@homer iio:device0]# cat name
 ahb:apb:hs1101lf@0
-[root@homer ~]# rmmod hs1101lf
-[root@homer ~]# dmesg | tail -1
-[ 5808.890000] hs1101lf ahb:apb:hs1101lf@0: hs1101lf_remove
-[root@homer ~]# modprobe hs1101lf
-[root@homer ~]# dmesg | tail -1
-[ 5894.700000] hs1101lf ahb:apb:hs1101lf@0: HS1101LF PROBED: Pin=9

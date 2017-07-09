@@ -21,12 +21,23 @@
 
 #include "hs1101lf.h"
 
+#define  HS1101LF_FATAL(X)  \
+	do { \
+  	  line = __LINE__; \
+  	  goto X; \
+        } while(0)
+
 struct hs1101lf_state {
 
-	int gpio;
+	int gpio_data;
+	enum of_gpio_flags gpio_data_flags;
+
+	int gpio_power;
+	enum of_gpio_flags gpio_power_flags;
+
 	int irq;
 	int humidity;
-	unsigned long counter;
+	volatile unsigned long counter;
 
 };
 
@@ -58,7 +69,7 @@ static int hs1101lf_read_raw(struct iio_dev *indio_dev,
 	int ret;
 
 	mutex_lock(&indio_dev->mlock);
-	hs1101lf_state->humidity = 1234;
+	hs1101lf_state->humidity = gpio_get_value(hs1101lf_state->gpio_data);
 
 	ret = IIO_VAL_INT;
 	if(chan->type == IIO_HUMIDITYRELATIVE)
@@ -93,13 +104,14 @@ static const struct iio_chan_spec hs1101lf_chan_spec[] = {
 };
 static irqreturn_t hs1101lf_gpio_irq_handler(int irq, void *data)
 {
-	// FIXME: check for mutex
+// FIXME: check if we have to lock mutex
 	struct iio_dev *indio_dev = data;
 	struct hs1101lf_state *hs1101lf_state;
 	hs1101lf_state = iio_priv(indio_dev);
 	hs1101lf_state->counter++;
-	dev_info(&indio_dev->dev, "hs1101lf_gpio_irq_handler irq=%d data=%p",
-			irq, data);
+//	dev_info(&indio_dev->dev, "hs1101lf_gpio_irq_handler irq=%d data=%p",
+//	irq, data
+//	);
 	return IRQ_HANDLED;
 }
 static int hs1101lf_probe(struct platform_device *pdev)
@@ -108,7 +120,6 @@ static int hs1101lf_probe(struct platform_device *pdev)
 	struct device_node *node = dev->of_node;
 	struct iio_dev *indio_dev;
 	struct hs1101lf_state *hs1101lf_state;
-	int ret;
 	int err = 0;
 	int line = 0;
 
@@ -116,15 +127,14 @@ static int hs1101lf_probe(struct platform_device *pdev)
 	if(indio_dev == NULL)
 		return -ENOMEM;
 
-	ret = of_get_gpio(node, 0);
-	if(ret < 0)
-		return ret;
-
 	hs1101lf_state = iio_priv(indio_dev);
+	hs1101lf_state->gpio_data = of_get_named_gpio_flags(node, "data", 0,
+			&hs1101lf_state->gpio_data_flags);
+	if(!gpio_is_valid(hs1101lf_state->gpio_data))
+		HS1101LF_FATAL(err_free_device);
+	hs1101lf_state->gpio_power = of_get_named_gpio_flags(node, "power_save",
+			0, &hs1101lf_state->gpio_power_flags);
 
-	hs1101lf_state->gpio = ret;
-
-	hs1101lf_state = iio_priv(indio_dev);
 	platform_set_drvdata(pdev, indio_dev);
 	indio_dev->name = pdev->name;
 	indio_dev->dev.parent = &pdev->dev;
@@ -133,41 +143,28 @@ static int hs1101lf_probe(struct platform_device *pdev)
 	indio_dev->channels = hs1101lf_chan_spec;
 	indio_dev->num_channels = ARRAY_SIZE(hs1101lf_chan_spec);
 
-	if(!gpio_is_valid(hs1101lf_state->gpio)) {
-		line = __LINE__;
-		goto err_free_device;
-	}
-	if((err = devm_gpio_request(dev, hs1101lf_state->gpio, "hs1101lf"))) {
-		line = __LINE__;
-		goto err_free_device;
-	}
-	if((err = gpio_direction_input(hs1101lf_state->gpio))) {
-		line = __LINE__;
-		goto err_free_device;
-	}
-	// FIXME: Verify that on at91 chip debounce is not supported really
-	if((err = gpio_set_debounce(hs1101lf_state->gpio, 0))
-			&& err != -ENOTSUPP) {
-		line = __LINE__;
-		goto err_free_device;
-	}
-	if((err = gpio_export(hs1101lf_state->gpio, false))) {
-		line = __LINE__;
-		goto err_free_device;
-	}
-	hs1101lf_state->irq = gpio_to_irq(hs1101lf_state->gpio);
+	if((err = devm_gpio_request(dev, hs1101lf_state->gpio_data, "hs1101lf")))
+		HS1101LF_FATAL(err_free_device);
+	if((err = gpio_direction_input(hs1101lf_state->gpio_data)))
+		HS1101LF_FATAL(err_free_device);
+// FIXME: Verify that on at91 chip debounce is not supported really
+	if((err = gpio_set_debounce(hs1101lf_state->gpio_data, 0))
+			&& err != -ENOTSUPP)
+		HS1101LF_FATAL(err_free_device);
+	if((err = gpio_export(hs1101lf_state->gpio_data, false)))
+		HS1101LF_FATAL(err_free_device);
+	hs1101lf_state->irq = gpio_to_irq(hs1101lf_state->gpio_data);
 	if(devm_request_irq(dev, hs1101lf_state->irq,
 			(irq_handler_t)hs1101lf_gpio_irq_handler,
 			IRQF_TRIGGER_RISING, "hs1101lf", indio_dev))
-		goto err_free_device;
-	dev_info(&pdev->dev, "hs1101lf probe use gpio=%d",
-			hs1101lf_state->gpio);
+		HS1101LF_FATAL(err_free_device);
+
+	dev_info(&pdev->dev, "hs1101lf probe use data=%d power=%d",
+			hs1101lf_state->gpio_data, hs1101lf_state->gpio_power);
 	return devm_iio_device_register(dev, indio_dev);
 
 	err_free_device:
-	// formatter wa
-	dev_info(&pdev->dev, "hs1101lf error %d pin=%d hs1101lf.c:%d %s", err,
-			hs1101lf_state->gpio, line, dev->driver->name);
+// formatter wa
 	devm_iio_device_free(dev, indio_dev);
 
 	return err;
@@ -185,9 +182,26 @@ static const struct of_device_id hs1101lf_dt_ids[] = {
 };
 MODULE_DEVICE_TABLE(of, hs1101lf_dt_ids);
 
+static int __maybe_unused hs1101lf_suspend(struct device *dev)
+{
+//	struct w1_gpio_platform_data *pdata = dev_get_platdata(dev);
+
+	return 0;
+}
+
+static int __maybe_unused hs1101lf_resume(struct device *dev)
+{
+//	struct w1_gpio_platform_data *pdata = dev_get_platdata(dev);
+
+	return 0;
+}
+
+static SIMPLE_DEV_PM_OPS(hs1101lf_pm_ops, hs1101lf_suspend, hs1101lf_resume);
+
 static struct platform_driver hs1101lf_driver = {
 	.driver = {
 		.name = "hs1101lf",
+		.pm = &hs1101lf_pm_ops,
 		.of_match_table = of_match_ptr(hs1101lf_dt_ids),
 	},
 	.probe = hs1101lf_probe,
