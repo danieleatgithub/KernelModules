@@ -1,4 +1,4 @@
-kernel module for hygrometer based on hs1101ls sensor (Frequency counter)
+kernel module for hygrometer based on hs1101ls capacitor sensor (Frequency counter)
 
 
 cd  /sys/bus/iio/devices/iio:device0

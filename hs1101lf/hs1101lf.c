@@ -19,8 +19,6 @@
 #include <linux/gpio.h>      // GPIO functions/macros
 #include <linux/interrupt.h> // interrupt functions/macros
 
-#include "hs1101lf.h"
-
 #define  HS1101LF_FATAL(X)  \
 	do { \
   	  line = __LINE__; \
