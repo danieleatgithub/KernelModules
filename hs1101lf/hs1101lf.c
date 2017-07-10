@@ -22,7 +22,7 @@
 
 #define  HS1101LF_FATAL(X,Y)  \
 	do { \
-  	  dev_err(dev,"hs1101lf error line=%d err=%d\n",__LINE__,X); \
+  	  dev_err(dev,"hs1101lf.ko error line=%d err=%d\n",__LINE__,X); \
   	  goto Y;\
 	}while(0)
 
