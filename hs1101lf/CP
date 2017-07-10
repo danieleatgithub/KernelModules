@@ -1,5 +1,6 @@
 #!/bin/bash
 IP=192.168.1.201
+MODULE_PATH=/lib/modules/4.4.16
 if [ $# -ne 0 ]; then
 	if [ $1 == "homer" ]; then
 		IP=192.168.1.200
@@ -9,8 +10,8 @@ if [ $# -ne 0 ]; then
 	fi
 fi
 echo "setup module on $IP"
-ssh root@${IP} 'rmmod hs1101lf; md5sum /lib/modules/4.4.16/hs1101lf.ko && rm /lib/modules/4.4.16/hs1101lf.ko'
-/usr/bin/scp /wks/workspace/KernelModules/hs1101lf/hs1101lf.ko root@${IP}:/lib/modules/4.4.16/hs1101lf.ko
-ssh root@${IP} 'md5sum /lib/modules/4.4.16/hs1101lf.ko && depmod -a'
+ssh root@${IP} "rmmod hs1101lf; md5sum ${MODULE_PATH}/extra/hs1101lf.ko && rm ${MODULE_PATH}/extra/hs1101lf.ko"
+/usr/bin/scp /wks/workspace/KernelModules/hs1101lf/hs1101lf.ko root@${IP}:${MODULE_PATH}/extra/hs1101lf.ko
+ssh root@${IP} "md5sum ${MODULE_PATH}/extra/hs1101lf.ko && depmod -a"
 
 # modprobe hs1101lf
