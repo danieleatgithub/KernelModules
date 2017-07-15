@@ -18,4 +18,7 @@ modules_install:
 	$(MAKEARCH) -C $(KDIR) INSTALL_MOD_PATH=$(KDIR)/modules modules_install
 clean:
 	$(MAKEARCH) -C $(KDIR) clean
+tools:
+	$(MAKEARCH) -C $(KDIR)/tools/ iio
+
 all: dtb  zImage modules  modules_install
