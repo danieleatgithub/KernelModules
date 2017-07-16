@@ -27,6 +27,7 @@
 								<option id="gnu.c.compiler.option.debugging.level.1633444692" name="Debug Level" superClass="gnu.c.compiler.option.debugging.level" value="gnu.c.debugging.level.max" valueType="enumerated"/>
 								<option id="gnu.c.compiler.option.preprocessor.def.symbols.797330526" name="Defined symbols (-D)" superClass="gnu.c.compiler.option.preprocessor.def.symbols" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="__KERNEL__=1"/>
+									<listOptionValue builtIn="false" value="__LINUX_ARM_ARCH__=1"/>
 								</option>
 								<option id="gnu.c.compiler.option.include.paths.684037797" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="/wks/buildroot-2016.11/output/build/linux-headers-4.4.16/arch/arm/include"/>

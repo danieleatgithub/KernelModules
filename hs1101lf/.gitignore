@@ -9,3 +9,5 @@
 /.hs1101lf.ko.cmd
 /.hs1101lf.mod.o.cmd
 /.hs1101lf.o.cmd
+/gpio_keys.c
+/tmp007.c
