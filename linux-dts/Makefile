@@ -20,5 +20,8 @@ clean:
 	$(MAKEARCH) -C $(KDIR) clean
 tools:
 	$(MAKEARCH) -C $(KDIR)/tools/ iio
+	
+debug_margie:
+	$(shell pwd)/CP margie
 
 all: dtb  zImage modules  modules_install

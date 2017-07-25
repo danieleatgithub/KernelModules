@@ -10,18 +10,20 @@
 
 
 IP=192.168.1.201
+DTB=at91-sama5d3_acquaa5.dtb
 if [ $# -ne 0 ]; then
 	if [ $1 == "margie" ]; then
 		IP=192.168.1.201
+		DTB=at91-sama5d3_acquaa5.dtb
 	fi
 	if [ $1 == "homer" ]; then
 		IP=192.168.1.200
+		DTB=at91-sama5d3_acquaa5.dtb
 	fi
 fi
 echo "setup dts on $IP boot is required"
-
 ssh root@${IP} 'md5sum /boot/at91-sama5d3_acqua.dtb && mv /boot/at91-sama5d3_acqua.dtb /boot/at91-sama5d3_acqua.dtb.old'
-/usr/bin/scp /wks/linux-4.4.16/arch/arm/boot/dts/at91-sama5d3_acquaa5.dtb root@${IP}:/boot/at91-sama5d3_acqua.dtb
+/usr/bin/scp /wks/linux-4.4.16/arch/arm/boot/dts/${DTB} root@${IP}:/boot/at91-sama5d3_acqua.dtb
 ssh root@${IP} 'md5sum /boot/at91-sama5d3_acqua.dtb'
 
 
