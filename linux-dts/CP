@@ -1,3 +1,4 @@
+#!/bin/bash
 # 
 # at91-sama5d3_acquaa5.dts is an HARD LINK to kernel source
 # 
