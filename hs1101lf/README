@@ -4,11 +4,11 @@ cd  /sys/bus/iio/devices/iio:device0
 cd;./hs1101lf.sh;cd -
 cd  /sys/bus/iio/devices/iio:device0
 
-cat /sys/bus/iio/devices/iio:device0/in_humidityrelative_input
-cat /sys/bus/iio/devices/iio:device0/counter
-
-ls  /sys/bus/iio/devices/iio:device0
-counter  dev  in_humidityrelative_input  name  of_node@  power/  subsystem@  uevent
+cat /sys/bus/iio/devices/iio\:device0/in_humidityrelative_raw
+[root@margie iio:device0]# cat in_humidityrelative_raw; cat frequency;cat cycles
+4761
+6676
+118
 
 ls /sys/bus/iio/devices/iio:device0/power/
 async                 control              runtime_active_time  runtime_status          runtime_usage

@@ -4,7 +4,6 @@
  *  Created on: 23/giu/2017
  *      Author: daniele
  *
- *  Skeleton from http://elixir.free-electrons.com/linux/latest/source/drivers/iio/frequency/ad9523.c
  *
  */
 #include <linux/device.h>
@@ -28,36 +27,46 @@
 #include <linux/gpio.h>      // GPIO functions/macros
 #include <linux/delay.h>
 
+#define HS1101LF_SAMPLE_MS 200
 #define  HS1101LF_FATAL(X,Y)  \
 	do { \
   	  dev_err(dev,"hs1101lf.ko error line=%d err=%d\n",__LINE__,X); \
+  	  ret = X; \
   	  goto Y;\
 	}while(0)
+
+// frequency to RH%
+static struct lookup_table_t {
+	int f;
+	int h;
+} lookup_table[] = {{7155, 10}, {7080, 15}, {7010, 20}, {6945, 25}, {6880, 30},
+		{6820, 35}, {6760, 40}, {6705, 45}, {6650, 50}, {6600, 55}, {
+				6550, 60}, {6500, 65}, {6450, 70}, {6400, 75}, {
+				6355, 80}, {6305, 85}, {6260, 90}, {6210, 95}};
 
 struct hs1101lf_state {
 
 	int gpio_data;
 	enum of_gpio_flags gpio_data_flags;
-
 	int gpio_power;
 	enum of_gpio_flags gpio_power_flags;
-
 	int irq;
 	unsigned int humidity;
-	volatile unsigned long counter;
-	volatile unsigned long frequency;
+	u64 cycles;
+	u64 frequency;
+	ktime_t start_time, stop_time;
 	volatile int running;
 	unsigned long sample_ms;
 	wait_queue_head_t queue;
 };
 
-static ssize_t hs1101lf_counter_show(struct device *dev,
+static ssize_t hs1101lf_cycles_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
 	struct iio_dev *indio_dev = dev_to_iio_dev(dev);
 	struct hs1101lf_state *hs1101lf_state = iio_priv(indio_dev);
 	int ret;
-	ret = sprintf(buf, "%lu\n", hs1101lf_state->counter);
+	ret = sprintf(buf, "%llu\n", hs1101lf_state->cycles);
 	return ret;
 }
 static ssize_t hs1101lf_frequency_show(struct device *dev,
@@ -66,8 +75,7 @@ static ssize_t hs1101lf_frequency_show(struct device *dev,
 	struct iio_dev *indio_dev = dev_to_iio_dev(dev);
 	struct hs1101lf_state *hs1101lf_state = iio_priv(indio_dev);
 	int ret;
-// Frequency in Hertz
-	ret = sprintf(buf, "%lu\n", hs1101lf_state->frequency);
+	ret = sprintf(buf, "%llu\n", hs1101lf_state->frequency);
 	return ret;
 }
 static ssize_t hs1101lf_sample_ms_show(struct device *dev,
@@ -91,8 +99,7 @@ static ssize_t hs1101lf_sample_ms_store(struct device *dev,
 	unsigned long value;
 
 	/*
-	 FIXME: deal with locking and mutual ex or EAGAIN
-	 mutex_lock(&st->lock);
+	 FIXME:  mutex_lock(&st->lock);
 	 */
 	dev_info(&indio_dev->dev, "hs1101lf_sample_ms_store  buf=%s", buf);
 
@@ -116,8 +123,8 @@ static ssize_t hs1101lf_sample_ms_store(struct device *dev,
 //	mutex_unlock(&st->lock);
 	return ret;
 }
-static IIO_DEVICE_ATTR(counter, S_IRUGO,
-		hs1101lf_counter_show,
+static IIO_DEVICE_ATTR(cycles, S_IRUGO,
+		hs1101lf_cycles_show,
 		NULL,
 		0);
 static IIO_DEVICE_ATTR(frequency, S_IRUGO,
@@ -128,9 +135,8 @@ static IIO_DEVICE_ATTR(sample_ms, S_IRUGO | S_IWUSR,
 		hs1101lf_sample_ms_show,
 		hs1101lf_sample_ms_store,
 		0);
-
 static struct attribute *hs1101lf_attributes[] = {
-		&iio_dev_attr_counter.dev_attr.attr,
+		&iio_dev_attr_cycles.dev_attr.attr,
 		&iio_dev_attr_frequency.dev_attr.attr,
 		&iio_dev_attr_sample_ms.dev_attr.attr,
 
@@ -141,50 +147,34 @@ static const struct attribute_group hs1101lf_attribute_group = {
 };
 static irqreturn_t hs1101lf_gpio_irq_handler(int irq, void *data)
 {
-// FIXME: check if we have to lock mutex
 	struct iio_dev *indio_dev = data;
 	struct hs1101lf_state *hs1101lf_state;
 	hs1101lf_state = iio_priv(indio_dev);
 	if(hs1101lf_state->running)
-		hs1101lf_state->counter++;
+		hs1101lf_state->cycles++;
 	return IRQ_HANDLED;
 }
-/**
- * hs1101lf_read_raw() - fill in stringified bitmap of buttons
- * @ddata: pointer to drvdata
- * @buf: buffer where stringified bitmap is written
- * @type: button type (%EV_KEY, %EV_SW)
- * @only_disabled: does caller want only those buttons that are
- *                 currently disabled or all buttons that can be
- *                 disabled
- *
- * This function writes buttons that can be disabled to @buf. If
- * @only_disabled is true, then @buf contains only those buttons
- * that are currently disabled. Returns 0 on success or negative
- * errno on failure.
- */
 
 static int hs1101lf_read_raw(struct iio_dev *indio_dev,
 		struct iio_chan_spec const *chan, int *val, int *val2, long m)
 {
 	struct hs1101lf_state *hs1101lf_state = iio_priv(indio_dev);
 	struct device *dev = &indio_dev->dev;
-	ktime_t a, b, c;
-	s64 d;
-	s64 tmp;
-	s64 timestamp;
-// FIXME: USATO per ora come trigger
+	ktime_t elapsed_ns;
+	u64 k_cycles;
 	int ret = 0;
+	int i;
 
 	if(chan->type != IIO_HUMIDITYRELATIVE)
 		return (-EINVAL);
 
 	if(mutex_trylock(&indio_dev->mlock)) {
-		hs1101lf_state->counter = 0;
+		hs1101lf_state->cycles = 0;
 		hs1101lf_state->humidity = 0;
+		hs1101lf_state->stop_time = ktime_set(0, 0);
 		hs1101lf_state->running = 1;
 
-		a = ktime_get();
+		hs1101lf_state->start_time = ktime_get();
 
 		ret = devm_request_irq(dev, hs1101lf_state->irq,
 				(irq_handler_t)hs1101lf_gpio_irq_handler,
@@ -194,31 +184,49 @@ static int hs1101lf_read_raw(struct iio_dev *indio_dev,
 		wait_event_interruptible_timeout(hs1101lf_state->queue,
 				(hs1101lf_state->running == 0),
 				msecs_to_jiffies(hs1101lf_state->sample_ms));
-		b = ktime_get();
-		c = ktime_sub(b, a);
-		d = ktime_to_ms(c);
-		dev_info(&indio_dev->dev,
-				"hs1101lf_read_raw  %llu %llu %llu elapsed=%llu",
-				a.tv64, b.tv64, c.tv64, d);
-
+		hs1101lf_state->stop_time = ktime_get();
 		hs1101lf_state->running = 0;
 		devm_free_irq(dev, hs1101lf_state->irq, indio_dev);
-		tmp = hs1101lf_state->counter * 1000;
-		hs1101lf_state->frequency = (unsigned int)do_div(tmp, d);
-		hs1101lf_state->humidity = hs1101lf_state->frequency; // FIXME: frequency/humidity conversion
 
-		timestamp = iio_get_time_ns();
-		iio_push_event(indio_dev,
-				IIO_UNMOD_EVENT_CODE(IIO_HUMIDITYRELATIVE, 0,
-						IIO_EV_TYPE_THRESH,
-						IIO_EV_DIR_RISING), timestamp);
+		elapsed_ns = ktime_sub(hs1101lf_state->stop_time,
+				hs1101lf_state->start_time);
 
+		k_cycles = hs1101lf_state->cycles * 1000000000;
+
+		hs1101lf_state->frequency = div64_u64(k_cycles,
+				elapsed_ns.tv64);
+		hs1101lf_state->humidity = 0;
+		for(i = 0; i < sizeof(lookup_table); i++) {
+			if(lookup_table[i].f <= hs1101lf_state->frequency)
+				break;
+		}
+		if(i == sizeof(lookup_table))
+			hs1101lf_state->humidity = 100;
+		if(i == 0)
+			hs1101lf_state->humidity = lookup_table[i].h;
+		if(i < (sizeof(lookup_table) - 1)) {
+			int f1, f2, h1, h2;
+			f1 = lookup_table[i - 1].f;
+			f2 = lookup_table[i].f;
+			h1 = lookup_table[i - 1].h;
+			h2 = lookup_table[i].h;
+			dev_dbg(&indio_dev->dev,
+					"f1=%d f2=%d h1=%d h2=%d f=%llu", f1,
+					f2, h1, h2, hs1101lf_state->frequency);
+			hs1101lf_state->humidity = (((h2 - h1) * 100)
+					/ (f2 - f1))
+					* (hs1101lf_state->frequency - f1)
+					+ (h1 * 100);
+		}
+		k_cycles = hs1101lf_state->cycles * 1000000000;
 		dev_info(&indio_dev->dev,
-				"hs1101lf_read_raw  data=%p indio_dev->event_interface=%p",
-				hs1101lf_state, indio_dev->event_interface);
-	}
+				"hs1101lf_read_raw  c=%llu ns1=%llu ns2=%llu nsE=%llu f=%llu kc=%llu",
+				hs1101lf_state->cycles,
+				hs1101lf_state->start_time.tv64,
+				hs1101lf_state->stop_time.tv64, elapsed_ns.tv64,
+				hs1101lf_state->frequency, k_cycles);
 
-	else
+	} else
 		HS1101LF_FATAL(-EAGAIN, hs1101lf_error);
 
 	*val = hs1101lf_state->humidity;
@@ -242,7 +250,6 @@ static int hs1101lf_reg_access(struct iio_dev *indio_dev, unsigned int reg,
 			"hs1101lf_reg_access reg=%d writeval=%d readval=%p",
 			reg, writeval, readval);
 	mutex_unlock(&indio_dev->mlock);
-
 	return 0;
 }
 
@@ -323,7 +330,7 @@ static int hs1101lf_probe(struct platform_device *pdev)
 
 	hs1101lf_state = iio_priv(indio_dev);
 
-	hs1101lf_state->sample_ms = 1000;
+	hs1101lf_state->sample_ms = HS1101LF_SAMPLE_MS;
 	init_waitqueue_head(&hs1101lf_state->queue);
 	hs1101lf_state->gpio_data = of_get_named_gpio_flags(node, "data", 0,
 			&hs1101lf_state->gpio_data_flags);
