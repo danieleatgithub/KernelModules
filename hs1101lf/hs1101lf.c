@@ -219,7 +219,7 @@ static int hs1101lf_read_raw(struct iio_dev *indio_dev,
 					+ (h1 * 100);
 		}
 		k_cycles = hs1101lf_state->cycles * 1000000000;
-		dev_info(&indio_dev->dev,
+		dev_dbg(&indio_dev->dev,
 				"hs1101lf_read_raw  c=%llu ns1=%llu ns2=%llu nsE=%llu f=%llu kc=%llu",
 				hs1101lf_state->cycles,
 				hs1101lf_state->start_time.tv64,
@@ -232,7 +232,7 @@ static int hs1101lf_read_raw(struct iio_dev *indio_dev,
 	*val = hs1101lf_state->humidity;
 	ret = IIO_VAL_INT;
 	mutex_unlock(&indio_dev->mlock);
-	dev_info(&indio_dev->dev, "hs1101lf_read_raw ret=%d val=%d", ret, *val);
+	dev_dbg(&indio_dev->dev, "hs1101lf_read_raw ret=%d val=%d", ret, *val);
 	return ret;
 
 	hs1101lf_error_free_mutex:

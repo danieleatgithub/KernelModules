@@ -1,6 +1,7 @@
 #!/bin/bash
 IP=192.168.1.201
-MODULE_PATH=/lib/modules/4.4.16
+. /wks/workspace/Homer/homer_deploy/environment.sh
+MODULE_PATH=/lib/modules/${LINUX_VER}
 if [ $# -ne 0 ]; then
 	if [ $1 == "homer" ]; then
 		IP=192.168.1.200
@@ -14,12 +15,12 @@ ssh root@${IP} "rmmod hs1101lf; md5sum ${MODULE_PATH}/extra/hs1101lf.ko && rm ${
 /usr/bin/scp /wks/workspace/KernelModules/hs1101lf/hs1101lf.ko root@${IP}:${MODULE_PATH}/extra/hs1101lf.ko
 ssh root@${IP} "md5sum ${MODULE_PATH}/extra/hs1101lf.ko && depmod -a"
 
-/usr/bin/scp /wks/linux-4.4.16/tools/iio/iio_event_monitor root@${IP}:/usr/local/bin/.
-/usr/bin/scp /wks/linux-4.4.16/tools/iio/generic_buffer root@${IP}:/usr/local/bin/.
-/usr/bin/scp /wks/linux-4.4.16/tools/iio/lsiio root@${IP}:/usr/local/bin/.
+#/usr/bin/scp /wks/linux-${LINUX_VER}/tools/iio/iio_event_monitor root@${IP}:/usr/local/bin/.
+#/usr/bin/scp /wks/linux-${LINUX_VER}/tools/iio/generic_buffer root@${IP}:/usr/local/bin/.
+#/usr/bin/scp /wks/linux-${LINUX_VER}/tools/iio/lsiio root@${IP}:/usr/local/bin/.
 
-ssh root@${IP} "chmod 777 /usr/local/bin/generic_buffer"
-ssh root@${IP} "chmod 777 /usr/local/bin/iio_event_monitor"
-ssh root@${IP} "chmod 777 /usr/local/bin/lsiio"
+#ssh root@${IP} "chmod 777 /usr/local/bin/generic_buffer"
+#ssh root@${IP} "chmod 777 /usr/local/bin/iio_event_monitor"
+#ssh root@${IP} "chmod 777 /usr/local/bin/lsiio"
 
 # modprobe hs1101lf
